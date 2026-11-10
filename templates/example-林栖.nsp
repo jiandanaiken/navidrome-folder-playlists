@@ -1,0 +1,9 @@
+{
+  "name": "林栖",
+  "comment": "物理文件夹歌单: 林栖",
+  "all": [
+    { "startsWith": { "filepath": "林栖/" } }
+  ],
+  "sort": "dateadded",
+  "order": "desc"
+}

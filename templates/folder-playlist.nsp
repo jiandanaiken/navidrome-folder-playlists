@@ -1,0 +1,9 @@
+{
+  "name": "【改成歌单名】",
+  "comment": "物理文件夹歌单",
+  "all": [
+    { "startsWith": { "filepath": "【改成音乐库下的相对文件夹名】/" } }
+  ],
+  "sort": "dateadded",
+  "order": "desc"
+}
