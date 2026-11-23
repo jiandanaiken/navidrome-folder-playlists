@@ -31,7 +31,7 @@
 | 字段 | 改成什么 |
 | --- | --- |
 | `name` | 歌单显示名（建议与文件夹同名） |
-| `filepath` | 音乐库根目录下的**相对**文件夹路径，**结尾的 `/` 必须保留** |
+| `filepath` | 音乐库根目录下的**相对**文件夹路径，**必须与文件夹名逐字相同**，**结尾的 `/` 必须保留** |
 
 保存为 UTF-8 编码，等下一次曲库扫描导入即可（`AutoImportPlaylists` 默认开启）。歌单里加歌删歌自动同步；**新建文件夹**需要多写一个对应的 `.nsp`。
 
@@ -58,7 +58,10 @@ python3 scripts/gen_folder_playlists.py /path/to/你的音乐库 -o nsp_output
 3. **改规则要等扫描**：修改 `.nsp` 后不是即时生效，等曲库扫描重新导入（Auto-import 开启时）。
 4. **`filepath` 是物理路径，且以 MusicFolder 为根**：不要带 `/music/` 这类挂载前缀（0.56+）。注意它和界面上显示的虚拟目录树不是一回事。
 5. **没被 Navidrome 收录的文件不会出现在歌单里**：物理文件夹里的文件数可能多于歌单曲目数（未扫描、无标签、不支持的格式等），先触发一次扫描再对账。
-6. 智能播放列表是官方 **Beta** 功能：歌单只读（不能手动调整曲目顺序）、`.nsp` 导入的歌单归属第一个 admin 账号。
+6. **文件夹名别带空格和括号类符号**（这条最容易踩，实测 2026-11-23）：形如 `群星 - 《电音夜色中文DJ》年度最给力电音[WAVE]` 的目录，规则即使写成**一模一样的全名**也命中 0 首；把文件夹改名为 `电音夜色中文DJ年度最给力电音`（去掉 `《》`、`[]`、空格）后，同一条前缀规则立刻命中 14 首。**&#8203;建议：文件夹名只用中英文、数字，不含空格、`《》`、`[]`、`（）`。**（说明：仅验证了「这类组合名会失败」，具体是空格还是括号导致失配未做单项分离测试。）
+7. **一个歌单只放一份 `.nsp`**：同一歌单存在两份 `name` 相同的 `.nsp`（例如曲库根目录一份、`歌单规则/` 再一份）会导入成**两个同名歌单**，其中一份通常 0 首。用歌单对象里的 `path` 字段可以分辨来源文件，删掉多余那份再扫描即可。
+8. **列表里的 `songCount` 是缓存值，判断是否生效要看曲目接口**：智能歌单在 `evaluatedAt` 为空时列表可能显示 0 首，但 `GET /api/playlist/{id}/tracks` 已能返回正确条目。数字没刷新不等于规则没生效。
+
 
 ## 字段与操作符速查
 
@@ -123,7 +126,9 @@ Generates one `.nsp` per subfolder containing audio files, merging case-duplicat
 - **Renaming an imported `.nsp` file creates a *new* playlist** (the old one stays). Rename via the `name` field instead.
 - Duplicate `name` values collide.
 - Rule edits take effect on the next library scan.
-- Files not indexed by Navidrome (unsupported/untagged/not yet scanned) won't appear in the playlist.
+- **Avoid spaces and bracket characters in folder names** (verified 2026-11-23): a folder named `群星 - 《电音夜色中文DJ》年度最给力电音[WAVE]` yields **0 matches even when the rule uses the exact full name**; renaming it to `电音夜色中文DJ年度最给力电音` (no `《》`, `[]`, spaces) made the same prefix rule return 14 songs. Keep folder names to plain letters/digits — no spaces, no `《》`, `[]`, `（）`.
+- **One `.nsp` per playlist**: two files sharing the same `name` value (e.g. one in the library root, one in `playlist_rules/`) import as **two playlists with the same title**, one usually empty. Use the playlist's `path` field to see which file it came from, delete the redundant one, then rescan.
+- **`songCount` is cached; check the tracks endpoint instead**: a smart playlist may report 0 while `GET /api/playlist/{id}/tracks` already returns the correct items.
 - Smart Playlists are an official **Beta** feature: playlists are read-only; `.nsp`-imported playlists belong to the first admin user.
 
 ### Credits
