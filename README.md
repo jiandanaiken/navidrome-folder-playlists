@@ -50,6 +50,7 @@ python3 scripts/gen_folder_playlists.py /path/to/你的音乐库 -o nsp_output
 - 为每个包含音频文件的子文件夹生成一个 `.nsp`（默认只扫第一层，`--depth` 可调）
 - 自动跳过隐藏目录和 `@eaDir`、`#recycle` 等系统目录
 - 大小写重名的文件夹会自动合并为一个歌单（多条 `startsWith` 用 `any` 组合）
+- - 文件夹名含空格、`《》`、`[]`、`（）` 等符号时会**打印警告**（这类名字的规则实测会命中 0 首）；加 `--strict` 可直接以非零码退出，方便在脚本里卡住
 
 ## 已知坑（实测踩过）
 
@@ -120,6 +121,7 @@ python3 scripts/gen_folder_playlists.py /path/to/music -o nsp_output
 ```
 
 Generates one `.nsp` per subfolder containing audio files, merging case-duplicate folder names into one playlist.
+Warns about folder names containing spaces or bracket characters (such rules fail in practice); add `--strict` to exit non-zero instead.
 
 ### Known pitfalls
 
