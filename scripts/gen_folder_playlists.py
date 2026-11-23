@@ -8,6 +8,7 @@ gen_folder_playlists.py — 为 Navidrome 批量生成「物理文件夹歌单�
 用法:
     python3 gen_folder_playlists.py /path/to/music -o nsp_output
     python3 gen_folder_playlists.py /path/to/music -o nsp_output --depth 2 --min-files 3
+    python3 gen_folder_playlists.py /path/to/music -o nsp_output --strict   # 名字含空格/括号时非零退出
 
 说明:
 - 规则匹配的是磁盘物理路径（相对 MusicFolder，尾斜杠防止子串误伤）
@@ -25,6 +26,15 @@ AUDIO_EXT = {
     ".m4a", ".wma", ".opus", ".aiff", ".aif",
 }
 SKIP_DIRS = {"@eaDir", "#recycle", "$RECYCLE.BIN", "System Volume Information", "lost+found"}
+# 实测（2026-11-23, Navidrome 0.64.2）：文件夹名含空格或括号类符号时，
+# 即使 filepath 写成完全一致的路径也命中 0 首。这里仅做提示，不改变生成行为。
+RISKY_CHARS = set(" 《》〈〉[]【】（）()·・")
+
+
+def risky_chars_in(name):
+    """返回文件夹名里命中 RISKY_CHARS 的字符列表（空列表=安全）"""
+    return sorted({ch for ch in name if ch in RISKY_CHARS})
+
 
 
 def count_audio_deep(path):
@@ -95,6 +105,7 @@ def main():
     ap.add_argument("--depth", type=int, default=1, help="扫描深度：1=只看第一层子目录（默认），2=含第二层")
     ap.add_argument("--min-files", type=int, default=1, help="文件夹至少含几个音频文件才生成歌单（默认 1）")
     ap.add_argument("--exclude", action="append", default=[], help="排除文件夹名包含该关键词（可多次）")
+    ap.add_argument("--strict", action="store_true", help="发现含空格/括号类符号的文件夹名时以非零码退出")
     args = ap.parse_args()
 
     root = os.path.abspath(args.music_root)
@@ -110,9 +121,13 @@ def main():
 
     used_names = set()
     written = 0
+    risky = []  # [(相对路径, 命中的字符)]
     for key in sorted(groups):
         rels = [rel for rel, _ in groups[key]]
         name = groups[key][0][1]
+        bad = risky_chars_in(name)
+        if bad:
+            risky.append((rels[0], "".join(bad)))
         while name in used_names:
             name += "_"
         used_names.add(name)
@@ -124,6 +139,16 @@ def main():
 
     print(f"完成: 生成 {written} 个 .nsp -> {args.output}/")
     print("下一步: 把输出目录整个复制进音乐库（如 音乐/歌单规则/），触发一次曲库扫描即可。")
+
+    if risky:
+        print()
+        print(f"⚠ 警告: {len(risky)} 个文件夹名含空格/括号类符号，实测这类名字的规则会命中 0 首")
+        print("   （Navidrome 0.64.2 实测：即使 filepath 写成完全一致的路径也失配）")
+        for rel, ch in risky:
+            print(f"   - {rel}    ← 含 {ch}")
+        print("   建议把文件夹名改成纯中英文+数字后重跑本脚本。")
+        if args.strict:
+            sys.exit(1)
 
 
 if __name__ == "__main__":
