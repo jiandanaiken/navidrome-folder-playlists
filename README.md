@@ -120,8 +120,7 @@ Use `startsWith` with a trailing slash instead of `contains` — substring match
 python3 scripts/gen_folder_playlists.py /path/to/music -o nsp_output
 ```
 
-Generates one `.nsp` per subfolder containing audio files, merging case-duplicate folder names into one playlist.
-Warns about folder names containing spaces or bracket characters (such rules fail in practice); add `--strict` to exit non-zero instead.
+Generates one `.nsp` per subfolder containing audio files, merging case-duplicate folder names into one playlist. Warns about folder names containing spaces or bracket characters (such rules fail in practice); add `--strict` to exit non-zero instead.
 
 ### Known pitfalls
 
